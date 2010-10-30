@@ -37,10 +37,44 @@
 **    The sample page from mod_cs_test.c
 */ 
 
+#define ap_psprintf apr_psprintf
+
 #include "httpd.h"
 #include "http_config.h"
 #include "http_protocol.h"
 #include "ap_config.h"
+#include "apr_strings.h"
+#include "ClearSilver.h"
+
+static NEOERR *render_cb(void *obj, char *s)
+{
+  request_rec *r = (request_rec *)obj;
+  ap_rputs(s,r);
+  return STATUS_OK;
+}
+
+static void output_handler(request_rec *r)
+{
+  HDF *hdf;
+  CSPARSE *cs;
+
+  const char *arrayname[4] =
+    {"FOO","BAR","HOGE","MONA"};
+  int i;
+  hdf_init(&hdf);
+
+  for(i = 0; i < 4; i++){
+    hdf_set_value(hdf, ap_psprintf(r->pool,
+				   "csdata.%d.arrayname", i), arrayname[i]);
+  }
+
+  cs_init(&cs, hdf);
+  cs_parse_file(cs, "/usr/local/src/cs_test/test/test.cs");
+  cs_render(cs, r, render_cb);
+  cs_destroy(&cs);
+  hdf_destroy(&hdf);
+}
+
 
 /* The sample content handler */
 static int cs_test_handler(request_rec *r)
@@ -51,7 +85,7 @@ static int cs_test_handler(request_rec *r)
     r->content_type = "text/html";      
 
     if (!r->header_only)
-        ap_rputs("The sample page from mod_cs_test.c\n", r);
+      output_handler(r);
     return OK;
 }
 

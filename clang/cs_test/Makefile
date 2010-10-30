@@ -14,11 +14,13 @@ APACHECTL=apachectl
 
 #   additional defines, includes and libraries
 #DEFS=-Dmy_define=my_value
-#INCLUDES=-Imy/include/dir
-#LIBS=-Lmy/lib/dir -lmylib
+INCLUDES=-I/usr/include/ClearSilver
+LIBS=-lneo_cs -lneo_utl
 
 #   the default target
-all: local-shared-build
+#all: local-shared-build
+all: 
+	${APXS} -c ${INCLUDES} ${LIBS} -Wl,-g mod_cs_test.c
 
 #   install the shared object file into Apache 
 install: install-modules-yes
