@@ -42,20 +42,36 @@
 #include "http_protocol.h"
 #include "ap_config.h"
 
+#include "stdlib.h"
+#include "errno.h"
+#include "limits.h"
+
 module AP_MODULE_DECLARE_DATA apm_test_module;
 
 typedef struct {
   int is_val_a_set;
 }apm_test_cfg;
 
+typedef struct {
+  long server_param;
+}apm_test_server_cfg;
+
 #define DEFAULT_VAL_A 0;
+#define DEFAULT_SERVER_PARAM 0;
 
 /* initialize directory config data */
 static void *create_dir_config(apr_pool_t *p, char *dir)
 {
-  apm_test_cfg *conf = (apm_test_cfg *)apr_palloc(p, sizeof(apm_test_cfg));
+  apm_test_cfg *conf = (apm_test_cfg *)apr_pcalloc(p, sizeof(apm_test_cfg));
   conf->is_val_a_set = DEFAULT_VAL_A;
   return conf;
+}
+
+/* initialize server setting */
+static void *create_server_config(apr_pool_t *p, server_rec *s)
+{
+  apm_test_server_cfg *pConfig = apr_pcalloc(p, sizeof(*pConfig));
+  return pConfig;
 }
 
 /* set value to directive */
@@ -66,10 +82,24 @@ static const char *set_available(cmd_parms *cmd, void *cfg, int flag)
   return NULL;
 }
 
+/* set value to server parameter */
+static const char *set_server_param(cmd_parms *cmd, void *dummy, const char *val)
+{
+  apm_test_server_cfg *pConfig = ap_get_module_config(cmd->server->module_config,
+						      &apm_test_module);
+  long i = strtol(val, NULL, 10);
+  if(errno == ERANGE && (i == LONG_MAX || i == LONG_MIN)){
+    return NULL;
+  }
+  pConfig->server_param = i;
+  return NULL;
+}
+
 /* define directive */
 static const command_rec apm_test_cmds[] = 
   {
     AP_INIT_FLAG("ApmTestValA", set_available, NULL, OR_ALL, "Use or not"),
+    AP_INIT_TAKE1("ApmTestServerParam", set_server_param, NULL, RSRC_CONF, "positive integer"),
     {NULL}
   };
 
@@ -87,12 +117,17 @@ static int apm_test_handler(request_rec *r)
       apm_test_cfg *conf = 
 	(apm_test_cfg *)
 	ap_get_module_config(r->per_dir_config, &apm_test_module);
+      apm_test_server_cfg *sv_conf =
+	(apm_test_server_cfg *)
+	ap_get_module_config(r->server->module_config, &apm_test_module);
 
       if(conf->is_val_a_set){
         ap_rputs("mod_apm_test val a is set\n", r);
       }else{
         ap_rputs("mod_apm_test val a is not set\n", r);
       }
+
+      ap_rprintf(r, "## server parameter %ld\n", sv_conf->server_param);
     }
     return OK;
 }
@@ -105,11 +140,11 @@ static void apm_test_register_hooks(apr_pool_t *p)
 /* Dispatch list for API hooks */
 module AP_MODULE_DECLARE_DATA apm_test_module = {
     STANDARD20_MODULE_STUFF, 
-    create_dir_config,                  /* create per-dir    config structures */
+    create_dir_config,     /* create per-dir    config structures */
     NULL,                  /* merge  per-dir    config structures */
-    NULL,                  /* create per-server config structures */
+    create_server_config,  /* create per-server config structures */
     NULL,                  /* merge  per-server config structures */
-    apm_test_cmds,                  /* table of config file commands       */
+    apm_test_cmds,         /* table of config file commands       */
     apm_test_register_hooks  /* register hooks                      */
 };
 
