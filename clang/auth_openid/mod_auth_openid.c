@@ -86,10 +86,23 @@ static int auth_openid_handler(request_rec *r)
     return OK;
 }
 
+static const char *set_openid_url(cmd_parms *cmd, void *cfg, const char *val)
+{
+  auth_openid_cfg *conf = (auth_openid_cfg *)cfg;
+  const char *url = val;
+
+  if(!ap_is_url(url)){
+    return "Error: not URL";
+  }
+  
+  conf->url = url;
+  return NULL;
+}
+
 /* define directive */
 static const command_rec auth_openid_cmds[] = 
   {
-    //    AP_INIT_TAKE1("OpenIDURL", set_openid_url, NULL, RSRC_CONF, "string"),
+    AP_INIT_TAKE1("OpenIDURL", set_openid_url, NULL, ACCESS_CONF, "string"),
     {NULL}
   };
 
