@@ -43,6 +43,7 @@
 #include "ap_config.h"
 
 #include <string.h>
+#include <time.h>
 
 module AP_MODULE_DECLARE_DATA auth_openid_module;
 
@@ -66,7 +67,11 @@ static void *create_dir_config(apr_pool_t *p, char *dir)
 /* The sample content handler */
 static int auth_openid_handler(request_rec *r)
 {
-    if (strcmp(r->handler, "auth_openid")) {
+  char timestamp[100];
+  time_t t = time(NULL);
+  strftime(timestamp, 100, "%F %T", localtime(&t));
+
+  if (strcmp(r->handler, "auth_openid")) {
         return DECLINED;
     }
     r->content_type = "text/html";
@@ -75,13 +80,16 @@ static int auth_openid_handler(request_rec *r)
         return DECLINED;
     }
 
-    ap_rputs("The sample page from mod_auth_openid.c\n", r);
+    ap_rputs("The sample page from mod_auth_openid.c\n<br>", r);
 
     auth_openid_cfg *conf = 
       (auth_openid_cfg *)
       ap_get_module_config(r->per_dir_config, &auth_openid_module);
 
     ap_rputs(conf->url, r);
+
+    ap_rputs("<br>", r);
+    ap_rputs(timestamp, r);
 	
     return OK;
 }
