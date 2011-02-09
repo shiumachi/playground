@@ -42,14 +42,24 @@
 #include "http_protocol.h"
 #include "ap_config.h"
 
+#include <string.h>
+
+module AP_MODULE_DECLARE_DATA auth_openid_module;
+
 typedef struct {
-  int val1;
+  char *url;
 }auth_openid_cfg;
 
 /* initialize directory config data */
 static void *create_dir_config(apr_pool_t *p, char *dir)
 {
   auth_openid_cfg *conf = (auth_openid_cfg *)apr_pcalloc(p, sizeof(auth_openid_cfg));
+  char *str = "hello world";
+  int size = strlen(str)+1;
+  
+  conf->url = (char *)apr_pcalloc(p, size);
+  strncpy(conf->url, str, size);
+  
   return conf;
 }
 
@@ -59,12 +69,30 @@ static int auth_openid_handler(request_rec *r)
     if (strcmp(r->handler, "auth_openid")) {
         return DECLINED;
     }
-    r->content_type = "text/html";      
+    r->content_type = "text/html";
+    
+    if (r->header_only) {
+        return DECLINED;
+    }
 
-    if (!r->header_only)
-        ap_rputs("The sample page from mod_auth_openid.c\n", r);
+    ap_rputs("The sample page from mod_auth_openid.c\n", r);
+
+    auth_openid_cfg *conf = 
+      (auth_openid_cfg *)
+      ap_get_module_config(r->per_dir_config, &auth_openid_module);
+
+    ap_rputs(conf->url, r);
+	
     return OK;
 }
+
+/* define directive */
+static const command_rec auth_openid_cmds[] = 
+  {
+    //    AP_INIT_TAKE1("OpenIDURL", set_openid_url, NULL, RSRC_CONF, "string"),
+    {NULL}
+  };
+
 
 static void auth_openid_register_hooks(apr_pool_t *p)
 {
@@ -78,7 +106,7 @@ module AP_MODULE_DECLARE_DATA auth_openid_module = {
     NULL,                  /* merge  per-dir    config structures */
     NULL,                  /* create per-server config structures */
     NULL,                  /* merge  per-server config structures */
-    NULL,                  /* table of config file commands       */
+    auth_openid_cmds,                  /* table of config file commands       */
     auth_openid_register_hooks  /* register hooks                      */
 };
 
