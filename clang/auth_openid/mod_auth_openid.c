@@ -45,6 +45,9 @@
 #include <string.h>
 #include <time.h>
 
+#define MAX_URL_LEN 1024
+#define MAX_USERNAME_LEN 128
+
 module AP_MODULE_DECLARE_DATA auth_openid_module;
 
 typedef struct {
@@ -56,15 +59,8 @@ typedef struct {
 static void *create_dir_config(apr_pool_t *p, char *dir)
 {
   auth_openid_cfg *conf = (auth_openid_cfg *)apr_pcalloc(p, sizeof(auth_openid_cfg));
-  char *str = "hello world";
-  char *str2 = "test user";
-  int size = strlen(str)+1;
-  int size2 = strlen(str2)+1;
-  
-  conf->url = (char *)apr_pcalloc(p, size);
-  strncpy(conf->url, str, size);
-  conf->username = (char *)apr_pcalloc(p, size2);
-  strncpy(conf->username, str2, size2);
+  conf->url = (char *)apr_pcalloc(p, MAX_URL_LEN);
+  conf->username = (char *)apr_pcalloc(p, MAX_USERNAME_LEN);
   
   return conf;
 }
@@ -105,22 +101,20 @@ static int auth_openid_handler(request_rec *r)
 static const char *set_openid_url(cmd_parms *cmd, void *cfg, const char *val)
 {
   auth_openid_cfg *conf = (auth_openid_cfg *)cfg;
-  const char *url = val;
-
-  if(!ap_is_url(url)){
+  
+  if(!ap_is_url(val)){
     return "Error: not URL";
   }
   
-  conf->url = url;
+  strncpy(conf->url, val, MAX_URL_LEN);
   return NULL;
 }
 
 static const char *set_openid_username(cmd_parms *cmd, void *cfg, const char *val)
 {
   auth_openid_cfg *conf = (auth_openid_cfg *)cfg;
-  const char *username = val;
 
-  conf->username = username;
+  strncpy(conf->username, val, MAX_USERNAME_LEN);
   return NULL;
 }
 
