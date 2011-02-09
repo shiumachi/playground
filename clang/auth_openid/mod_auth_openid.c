@@ -49,6 +49,7 @@ module AP_MODULE_DECLARE_DATA auth_openid_module;
 
 typedef struct {
   char *url;
+  char *username;
 }auth_openid_cfg;
 
 /* initialize directory config data */
@@ -56,10 +57,14 @@ static void *create_dir_config(apr_pool_t *p, char *dir)
 {
   auth_openid_cfg *conf = (auth_openid_cfg *)apr_pcalloc(p, sizeof(auth_openid_cfg));
   char *str = "hello world";
+  char *str2 = "test user";
   int size = strlen(str)+1;
+  int size2 = strlen(str2)+1;
   
   conf->url = (char *)apr_pcalloc(p, size);
   strncpy(conf->url, str, size);
+  conf->username = (char *)apr_pcalloc(p, size2);
+  strncpy(conf->username, str2, size2);
   
   return conf;
 }
@@ -87,8 +92,11 @@ static int auth_openid_handler(request_rec *r)
       ap_get_module_config(r->per_dir_config, &auth_openid_module);
 
     ap_rputs(conf->url, r);
-
     ap_rputs("<br>", r);
+
+    ap_rputs(conf->username, r);
+    ap_rputs("<br>", r);
+    
     ap_rputs(timestamp, r);
 	
     return OK;
@@ -107,10 +115,21 @@ static const char *set_openid_url(cmd_parms *cmd, void *cfg, const char *val)
   return NULL;
 }
 
+static const char *set_openid_username(cmd_parms *cmd, void *cfg, const char *val)
+{
+  auth_openid_cfg *conf = (auth_openid_cfg *)cfg;
+  const char *username = val;
+
+  conf->username = username;
+  return NULL;
+}
+
+
 /* define directive */
 static const command_rec auth_openid_cmds[] = 
   {
     AP_INIT_TAKE1("OpenIDURL", set_openid_url, NULL, ACCESS_CONF, "string"),
+    AP_INIT_TAKE1("OpenIDUserName", set_openid_username, NULL, ACCESS_CONF, "string"),
     {NULL}
   };
 
