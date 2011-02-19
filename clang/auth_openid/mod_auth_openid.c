@@ -94,8 +94,10 @@ static int auth_openid_handler(request_rec *r)
     ap_rputs("<br>", r);
     
     ap_rputs(timestamp, r);
+
+    apr_table_setn(r->headers_out, "Location", "http://localhost:10080/");
 	
-    return OK;
+    return HTTP_MOVED_TEMPORARILY;
 }
 
 static const char *set_openid_url(cmd_parms *cmd, void *cfg, const char *val)
