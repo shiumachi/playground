@@ -1,4 +1,6 @@
 #!/usr/bin/python
+import sys
+
 def fibonacci():
     a, b = 0, 1
     while True:
@@ -7,6 +9,7 @@ def fibonacci():
 
 if __name__=='__main__':
     fib = fibonacci()
-    for i in xrange(10):
+    num = int(sys.argv[1])
+    for i in xrange(num):
         print next(fib)
         
