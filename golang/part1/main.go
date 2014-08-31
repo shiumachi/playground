@@ -11,7 +11,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 )
 
@@ -24,13 +23,23 @@ func main() {
 	sc := bufio.NewScanner(os.Stdin)
 
 	// TODO: Create a new json.Encoder writing into the standard output.
+	encoder := json.NewEncoder(os.Stdout)
+
 	for sc.Scan() {
+		msg := Message{
+			Body: sc.Text(),
+		}
+
+		err := encoder.Encode(msg)
+		if err != nil {
+			fmt.Println("encode error: %s", err)
+		}
 		// TODO: Create a new message with the read text.
 		// TODO: Encode the message, and check for errors!
 	}
 	// TODO: Check for a scan error.
 
 	if err := sc.Err(); err != nil {
-		fmt.Printf("Scan error: %s", err)
+		fmt.Println("Scan error: %s", err)
 	}
 }
